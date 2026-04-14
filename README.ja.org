@@ -1,0 +1,102 @@
+#+title: eat-windows-pty — ネイティブ Windows の emacs-eat に ConPTY サポートを追加
+#+author: 藤澤電気管理事務所
+
+*言語:* [[file:README.org][English]] / 日本語
+
+#+begin_quote
+ネイティブ Windows Emacs で =M-x eat= を動かす。
+#+end_quote
+
+#+html: <a href="https://github.com/sponsors/zawatton21"><img src="https://img.shields.io/badge/Sponsor_%E2%9D%A4_Support_this_project-pink?style=for-the-badge" alt="Sponsor"></a>
+
+* これは何？
+
+ネイティブ Windows Emacs には PTY サポートがありません。上流の [[https://github.com/akib/emacs-eat][eat]] はコマンドを
+=/usr/bin/env sh -c ...= でラップしますが、Windows ではこれが動作しません。
+
+このパッケージは =conhost.exe --headless --feature pty= を ConPTY ラッパーとして起動し、
+Windows 上で eat に正規の疑似コンソールを提供します。
+
+* 動作の仕組み
+
+#+begin_example
+Emacs (pipe-mode サブプロセス)
+  └─ conhost.exe --headless --feature pty PROGRAM ARGS...
+       └─ ConPTY 疑似コンソール
+            └─ シェル / プログラム
+#+end_example
+
+* 動作要件
+
+- Emacs 29.1+（ネイティブ Windows ビルド）
+- [[https://github.com/akib/emacs-eat][eat]] 0.9+
+- Windows 10 1809+（ConPTY サポートが必要）
+
+* インストール
+
+** async-installer
+
+[[https://github.com/zawatton21/async-installer][async-installer]] — Emacs 向けの小型ノンブロッキングパッケージマネージャ。Pure Elisp 構文で、マクロ DSL は不要です。
+
+#+begin_src emacs-lisp
+(async-installer-git-add "https://github.com/zawatton21/eat-windows-pty.git"
+                            :branch "master"
+                            :main "eat-windows-pty.el")
+#+end_src
+
+** straight.el
+
+#+begin_src emacs-lisp
+(straight-use-package
+ '(eat-windows-pty :type git :host github :repo "zawatton21/eat-windows-pty"))
+#+end_src
+
+** elpaca
+
+#+begin_src emacs-lisp
+(elpaca (eat-windows-pty :host github :repo "zawatton21/eat-windows-pty"))
+#+end_src
+
+** use-package（straight または elpaca と組み合わせる場合）
+
+#+begin_src emacs-lisp
+;; straight と組み合わせる場合
+(use-package eat-windows-pty
+  :straight (eat-windows-pty :type git :host github :repo "zawatton21/eat-windows-pty"))
+
+;; elpaca と組み合わせる場合
+(use-package eat-windows-pty
+  :ensure (:host github :repo "zawatton21/eat-windows-pty"))
+#+end_src
+
+** 手動インストール
+
+リポジトリをクローンして =load-path= に追加します:
+
+#+begin_src emacs-lisp
+(add-to-list 'load-path "/path/to/eat-windows-pty")
+(require 'eat-windows-pty)
+#+end_src
+
+* 使い方
+
+#+begin_src emacs-lisp
+(with-eval-after-load 'eat
+  (when (eq system-type 'windows-nt)
+    (require 'eat-windows-pty)))
+#+end_src
+
+これだけで =M-x eat= が Windows 上で動作するようになります。
+
+* 設計
+
+フォークではなく、ドロップイン上書き方式です。eat 読み込み後に 2 つの関数を再定義します:
+
+- =eat-exec= — =/usr/bin/env sh= の代わりに =conhost.exe= 経由でルーティング
+- =eat--1= — シェルラップを行わず、プログラムを直接渡す
+
+Artem Khramov による [[https://github.com/akib/emacs-eat/pull/126][PR #126]] をベースにしています（上流にはマージされていません）。
+
+* ライセンス
+
+GPL-3.0

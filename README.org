@@ -1,6 +1,8 @@
 #+title: eat-windows-pty — ConPTY support for emacs-eat on native Windows
 #+author: Fujisawa Electric Management Office
 
+*Languages:* English / [[file:README.ja.org][日本語]]
+
 #+begin_quote
 Make =M-x eat= work on native Windows Emacs.
 #+end_quote
